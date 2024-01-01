@@ -1,0 +1,273 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Вызовы такси</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.0/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+    <h2>Вызовы такси</h2>
+    <form name="callForm">
+        <input type="hidden" name="callId" value="0" />
+        <div class="form-group col-md-5">
+            <label for="callTime">Дата вызова:</label>
+            <input class="form-control" name="callTime" type="datetime-local" />
+        </div>
+        <div class="form-group col-md-5">
+            <label for="telephone">Телефон</label>
+            <input class="form-control" name="telephone" />
+        </div>
+        <div class="form-group col-md-5">
+            <label for="startPosition">Точка отправления</label>
+            <input class="form-control" name="startPosition" />
+        </div>
+        <div class="form-group col-md-5">
+            <label for="endPosition">Точка прибытия</label>
+            <input class="form-control" name="endPosition" />
+        </div>
+        <div class="form-group col-md-5">
+            <label for="rateId">Тариф</label>
+            <input class="form-control" name="rateId" type="number" />
+        </div>
+        <div class="form-group col-md-5">
+            <label for="dispatcherId">Диспетчер</label>
+            <input class="form-control" name="dispatcherId" type="number" />
+        </div>
+        <div class="form-group col-md-5">
+            <label for="carId">Автомобиль</label>
+            <input class="form-control" name="carId" type="number" />
+        </div>
+        <div class="panel-body">
+            <button type="submit" id="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+    </form>
+    <button id="reset" onclick="reset()" class="btn btn-primary">Сбросить</button>
+    <table class="table table-condensed table-striped  col-md-6">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Время вызова</th>
+                <th>Телефон</th>
+                <th>Точка отправления</th>
+                <th>Точка прибытия</th>
+                <th>Тариф</th>
+                <th>Диспетчер</th>
+                <th>Автомобиль</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <script>
+        // Получение всех пользователей
+        async function GetCalls() {
+            const response = await fetch("/api/Calls", {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const calls = await response.json();
+                let rows = document.querySelector("tbody");
+                calls.forEach(call => {
+                    rows.append(row(call));
+                });
+            }
+        }
+
+        async function GetCall(callId) {
+            const response = await fetch("/api/Calls/" + callId, {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const call = await response.json();
+                const form = document.forms["callForm"];
+                let date = new Date(call.callTime);
+                let year = date.getFullYear();
+                let month = ("0" + (date.getMonth() + 1)).slice(-2);
+                let day = ("0" + date.getDate()).slice(-2);
+                let hours = ("0" + date.getHours()).slice(-2);
+                let minutes = ("0" + date.getMinutes()).slice(-2);
+                let formattedDateString = year + "-" + month + "-" + day + "T" + hours + ":" + minutes;
+                form.elements["callId"].value = call.callId;
+                form.elements["callTime"].value = formattedDateString;
+                form.elements["telephone"].value = call.telephone;
+                form.elements["startPosition"].value = call.startPosition;
+                form.elements["endPosition"].value = call.endPosition;
+                form.elements["rateId"].value = call.rateId;
+                form.elements["dispatcherId"].value = call.dispatcherId;
+                form.elements["carId"].value = call.carId;
+            }
+        }
+
+        async function CreateCall(callTime, telephone, startPosition, endPosition, carId, rateId, dispatcherId) {
+            console.log(JSON.stringify({
+
+                callTime: callTime,
+                telephone: telephone,
+                startPosition: startPosition,
+                endPosition: endPosition,
+                carId: carId,
+                rateId: rateId,
+                dispatcherId: dispatcherId
+
+            }))
+            const response = await fetch("api/Calls", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    callTime: callTime,
+                    telephone: telephone,
+                    startPosition: startPosition,
+                    endPosition: endPosition,
+                    carId: carId,
+                    rateId: rateId,
+                    dispatcherId: dispatcherId
+                })
+            });
+            if (response.ok === true) {
+                await response.json();
+                reset();
+            }
+        }
+
+        async function EditCall(callId, callTime, telephone, startPosition, endPosition, carId, rateId, dispatcherId) {
+            console.log(JSON.stringify({
+                callId: callId,
+                callTime: callTime,
+                telephone: telephone,
+                startPosition: startPosition,
+                endPosition: endPosition,
+                carId: carId,
+                rateId: rateId,
+                dispatcherId: dispatcherId
+
+            }))
+            const response = await fetch("api/Calls", {
+                method: "PUT",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    callId: callId,
+                    callTime: callTime,
+                    telephone: telephone,
+                    startPosition: startPosition,
+                    endPosition: endPosition,
+                    carId: carId,
+                    rateId: rateId,
+                    dispatcherId: dispatcherId
+
+                })
+            });
+            if (response.ok === true) {
+                await response.json();
+                reset();
+            }
+        }
+
+        async function DeleteCall(callId) {
+            const response = await fetch("/api/Calls/" + callId, {
+                method: "DELETE",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const call = await response.json();
+                document.querySelector("tr[data-rowid='" + call.callId + "']").remove();
+            }
+        }
+
+        function reset() {
+            document.location.reload();
+        }
+
+        function row(call) {
+
+            const tr = document.createElement("tr");
+            tr.setAttribute("data-rowid", call.callId);
+
+            const callIdTd = document.createElement("td");
+            callIdTd.append(call.callId);
+            tr.append(callIdTd);
+
+            const calllTimeTd = document.createElement("td");
+            calllTimeTd.append(new Date(call.callTime).toDateString());
+            tr.append(calllTimeTd);
+
+            const telephoneTd = document.createElement("td");
+            telephoneTd.append(call.telephone);
+            tr.append(telephoneTd);
+
+            const startPositionTd = document.createElement("td");
+            startPositionTd.append(call.startPosition);
+            tr.append(startPositionTd);
+
+            const endPositionTd = document.createElement("td");
+            endPositionTd.append(call.endPosition);
+            tr.append(endPositionTd);
+
+            const rateTd = document.createElement("td");
+            rateTd.append(call.rate.rateDescription);
+            tr.append(rateTd);
+
+            const dispatcherTd = document.createElement("td");
+            dispatcherTd.append(call.dispatcher.firstName);
+            tr.append(dispatcherTd);
+
+            const carTd = document.createElement("td");
+            carTd.append(call.car.registrationNumber);
+            tr.append(carTd);
+
+            const linksTd = document.createElement("td");
+
+            const editLink = document.createElement("a");
+            editLink.setAttribute("data-callId", call.callId);
+            editLink.setAttribute("style", "cursor:pointer;padding:15px;");
+            editLink.append("Изменить");
+            editLink.addEventListener("click", e => {
+
+                e.preventDefault();
+                GetCall(call.callId);
+            });
+            linksTd.append(editLink);
+
+            const removeLink = document.createElement("a");
+            removeLink.setAttribute("data-callId", call.callId);
+            removeLink.setAttribute("style", "cursor:pointer;padding:15px;");
+            removeLink.append("Удалить");
+            removeLink.addEventListener("click", e => {
+
+                e.preventDefault();
+                DeleteCall(call.callId);
+            });
+
+            linksTd.append(removeLink);
+            tr.appendChild(linksTd);
+
+            return tr;
+        }
+
+        document.forms["callForm"].addEventListener("submit", e => {
+            e.preventDefault();
+            const form = document.forms["callForm"];
+            const callId = form.elements["callId"].value;
+            const callTime = form.elements["callTime"].value;
+            const telephone = form.elements["telephone"].value;
+            const startPosition = form.elements["startPosition"].value;
+            const endPosition = form.elements["endPosition"].value;
+            const carId = form.elements["carId"].value;
+            const rateId = form.elements["rateId"].value;
+            const dispatcherId = form.elements["dispatcherId"].value;
+
+            if (callId == 0)
+                CreateCall(callTime, telephone, startPosition, endPosition, carId, rateId, dispatcherId);
+            else
+                EditCall(callId, callTime, telephone, startPosition, endPosition, carId, rateId, dispatcherId);
+        });
+
+        GetCalls();
+
+    </script>
+
+</body>
+</html>
